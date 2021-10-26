@@ -10,6 +10,8 @@ from plotly.offline import plot
 import streamlit as st
 import streamlit.components.v1 as components
 
+from plots import *
+
 
 #### GENERAL CONFIGURATION
 stdir = os.getcwd()   # App dir
@@ -66,7 +68,6 @@ elif selection == 'Experiment - Penalties':
         for f in files:
             dfs.append(pd.read_csv(os.path.join(exp_folder_path, f), index_col = 0))
         dfs = tuple(dfs)
-        print("all ok")
         return dfs
     
     data_load_state = st.text('Loading data...')
@@ -76,27 +77,42 @@ elif selection == 'Experiment - Penalties':
     
     # Show burn in for validation purposes:
     if st.checkbox('Show Scenario Setup (Burn-in)'):
-        st.text("Overall Compliance level")
+        with st.expander("See NRAR's Activity"):
+            data = collect_traces(df = dfs[0], 
+                                  list_of_column_names = ["KPI-total-investigations", "KPI-total-audits", "KPI-total-routine"],
+                                  type_of_plot = "Bar")
+            layout = create_layout(x_axis_title = "Simulation Time (weeks)", y_axis_title = "Number of Farmers")
+            fig = go.Figure(data = data, layout = layout)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            data = collect_traces(df = dfs[0], 
+                                  list_of_column_names = ["KPI-NRAR-surveillance-rate"],
+                                  type_of_plot = "Scatter")
+            layout = create_layout(x_axis_title = "Simulation Time (weeks)", y_axis_title = "Surveillance Rate (%)")
+            fig = go.Figure(data = data, layout = layout)
+            st.plotly_chart(fig, use_container_width=True)
         
-        # Creating 2 columns:
-        col1, col2 = st.columns(2)
+        with st.expander("See Overall Compliance level"):
+            data = collect_traces(df = dfs[0], 
+                                  list_of_column_names = ["KPI-farmers-compliance"],
+                                  type_of_plot = "Bar")
+            layout = create_layout(x_axis_title = "Simulation Time (weeks)", y_axis_title = "Number of Farmers")
+            fig = go.Figure(data = data, layout = layout)
+            st.plotly_chart(fig, use_container_width=True)
+            
+            data = collect_traces(df = dfs[0], 
+                                  list_of_column_names = ["KPI-grade-5", "KPI-grade-4", "KPI-grade-3", "KPI-grade-2", "KPI-grade-1", "KPI-grade-0"],
+                                  type_of_plot = "Bar",
+                                  color_dict = {"KPI-grade-5":"purple", "KPI-grade-4":"green", "KPI-grade-3":"mediumturquoise", "KPI-grade-2":"gold", "KPI-grade-1":"darkorange", "KPI-grade-0":"red"})
+            
+            layout = create_layout(x_axis_title = "Simulation Time (weeks)", y_axis_title = "Number of Farmers", barmode = "stack")
+            fig = go.Figure(data = data, layout = layout)
+            st.plotly_chart(fig, use_container_width=True)
         
-        # First check the overall compliance level reached:
-        with col1:
-            res = dfs[0].loc[:, ["KPI-total-investigations", "KPI-total-audits"]]
-            data = []
-            trace = go.Bar(
-                x = res.index.values,
-                y = res["KPI-total-investigations"],
-                name = "KPI-total-investigations", # for legend
-                #marker_color = "purple",
-                marker_line_width = 0.1,
-                opacity = 0.95,
-                text = "KPI-total-investigations")
-            data.append(trace)
-        
-        #use_container_width=True)
-        st.text("NRAR's activity")
+        with st.expander("See a Farmer"):
+            pass
+            
+    
     
     choice = st.selectbox("Select metric to analyze:", ["Farmers Real Compliance", "NRAR's activity"])
     
@@ -127,20 +143,3 @@ elif selection == 'Experiment - Penalties':
         
         # PLOT FIGURE
         st.plotly_chart(fig)
-        
-
-#if st.checkbox('Show raw data'):
-#    st.subheader('Raw data')
-#    st.write(data)
-#
-#st.subheader('Number of pickups by hour')
-#hist_values = np.histogram(data[DATE_COLUMN].dt.hour, bins=24, range=(0,24))[0]
-#st.bar_chart(hist_values)
-#
-#
-#hour_to_filter = st.slider('hour', 0, 23, 17)  # min: 0h, max: 23h, default: 17h
-#filtered_data = data[data[DATE_COLUMN].dt.hour == hour_to_filter]
-#st.subheader(f'Map of all pickups at {hour_to_filter}:00')
-#st.map(filtered_data)
-
-
